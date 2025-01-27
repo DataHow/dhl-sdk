@@ -4,7 +4,7 @@
 import urllib.parse as urlparse
 from datetime import datetime
 from functools import reduce
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 import numpy as np
 from pydantic import BaseModel, Field, model_validator
@@ -91,12 +91,50 @@ class PredictionRequestConfig(BaseModel):
         )
 
 
+class SpectraPredictionConfig(BaseModel):
+    """Pydantic class representing Spectra Prediction Config"""
+
+    prediction_mode: Literal["classic", "onlySpectra"] = Field(
+        default="classic", alias="predictionMode"
+    )
+
+
+class OnlyId(BaseModel):
+    """Pydantic class representing a sctuc with only the id"""
+
+    id: str
+
+
 class PredictionRequest(BaseModel):
     """Pydantic class representing the expected Predict Request"""
 
     instances: list[list[Optional[Instance]]]
     metadata: Optional[dict] = None
-    config: Optional[PredictionRequestConfig] = None
+    config: Optional[Union[PredictionRequestConfig, SpectraPredictionConfig]] = None
+
+
+class Metadata(BaseModel):
+    """Pydantic class representing Metadata for Predict Request"""
+
+    experiments: list[Optional[OnlyId]] = [None]
+    variables: list[OnlyId]
+
+
+class PipelineStage(BaseModel):
+    """Pydantic class representing the Prediction Pipeline Stage"""
+
+    config: Union[PredictionRequestConfig, SpectraPredictionConfig]
+    id: str
+    merge_strategy: str = Field(default="merge", alias="mergeStrategy")
+    type: str = Field(default="predict")
+
+
+class PredictionPipelineRequest(BaseModel):
+    """Pydantic class representing the expected Predict Request"""
+
+    instances: list[list[Optional[Instance]]]
+    metadata: Metadata
+    stages: list[PipelineStage] = None
 
 
 class PredictionResponse(BaseModel):

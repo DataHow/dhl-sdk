@@ -20,7 +20,9 @@ from dhl_sdk._spectra_utils import (
     _validate_spectra_format,
 )
 from dhl_sdk._utils import (
-    PredictionRequest,
+    Metadata,
+    PipelineStage,
+    PredictionPipelineRequest,
     PredictionRequestConfig,
     Predictions,
     PredictionResponse,
@@ -64,6 +66,8 @@ class Dataset(Protocol):
 
 
 class Model(Protocol):
+    id: str
+
     @property
     def dataset(self) -> Dataset:
         ...
@@ -313,9 +317,21 @@ class CultivationPropagationPreprocessor(Preprocessor):
             else:
                 instances[0].append(None)
 
-        json_data = PredictionRequest(
-            instances=instances, config=self.prediction_config
-        ).model_dump(by_alias=True, exclude_none=True, exclude=["sampleId", "steps"])
+        json_data = PredictionPipelineRequest(
+            instances=instances,
+            metadata=Metadata(
+                variables=[{"id": var.id} for var in input_variables],
+            ),
+            stages=[PipelineStage(config=self.prediction_config, id=self.model.id)],
+        ).model_dump(
+            by_alias=True,
+            exclude_none=True,
+            include={
+                "instances": {"__all__": {"__all__": {"timestamps", "values"}}},
+                "metadata": True,
+                "stages": True,
+            },
+        )
 
         return [json_data]
 
@@ -413,9 +429,23 @@ class CultivationHistoricalPreprocessor(Preprocessor):
             else:
                 instances[0].append(None)
 
-        json_data = PredictionRequest(
-            instances=instances, config=self.prediction_config
-        ).model_dump(by_alias=True, exclude_none=True, exclude="sampleId")
+        json_data = PredictionPipelineRequest(
+            instances=instances,
+            metadata=Metadata(
+                variables=[{"id": var.id} for var in input_variables],
+            ),
+            stages=[PipelineStage(config=self.prediction_config, id=self.model.id)],
+        ).model_dump(
+            by_alias=True,
+            exclude_none=True,
+            include={
+                "instances": {
+                    "__all__": {"__all__": {"timestamps", "values", "steps"}}
+                },
+                "metadata": True,
+                "stages": True,
+            },
+        )
 
         return [json_data]
 

@@ -33,9 +33,11 @@ class TestSpectraUtils(unittest.TestCase):
             "spectrum": {"xAxis": {"dimension": 4}},
         }
         self.model_no_inputs = Mock()
+        self.model_no_inputs.id = "model-id-1"
         self.model_no_inputs.inputs = []
         self.model_no_inputs.dataset.variables = [Variable(**spectrum_var)]
         self.model_with_inputs = Mock()
+        self.model_with_inputs.id = "model-id-2"
         self.model_with_inputs.dataset.variables = [
             Variable(**spectrum_var),
             Variable(id="id-123", code="var1", variant="numeric", name="variable 1"),
@@ -213,7 +215,7 @@ class TestSpectraUtils(unittest.TestCase):
     def test_convert_to_request(self):
         model = self.model_with_inputs
         model.spectra_size = 4
-        model.dataset.get_spectrum_index.return_value = 0
+        model.dataset.get_spectra_index.return_value = 0
 
         spectra = [[1.0, 2.0, 3.0, 3.0], [4.0, 5.0, 6.0, 6.0], [7.0, 8.0, 9.0, 9.0]]
         inputs = {"var1": [0, 1, 0], "var2": [1, 1, 1]}
@@ -231,7 +233,7 @@ class TestSpectraUtils(unittest.TestCase):
     def test_convert_request_noinput(self):
         model = self.model_no_inputs
         model.spectra_size = 4
-        model.dataset.get_spectrum_index.return_value = 0
+        model.dataset.get_spectra_index.return_value = 0
 
         spectra = [[1.0, 2.0, 3.0, 3.0], [4.0, 5.0, 6.0, 6.0], [7.0, 8.0, 9.0, 9.0]]
         processor = SpectraPreprocessor(spectra=spectra, model=model, inputs=None)
@@ -283,6 +285,7 @@ class TestCultivationUtils(unittest.TestCase):
             "group": {"code": "X"},
         }
         self.model = Mock()
+        self.model.id = "model-id-1"
         self.model.dataset.variables = [
             Variable(**var1),
             Variable(**var2),

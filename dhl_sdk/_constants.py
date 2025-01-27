@@ -15,7 +15,7 @@ PROJECTS_URL = "api/db/v2/projects"
 DATASETS_URL = "api/db/v2/datasets"
 MODELS_URL = "api/db/v2/pipelineJobs"
 TEMPLATES_URL = "api/db/v2/pipelineJobTemplates"
-PREDICT_URL = "api/pipeline/v1/predictors"
+PREDICT_URL = "api/pipeline/v1/pipeline"
 
 
 PROCESS_UNIT_MAP = {
