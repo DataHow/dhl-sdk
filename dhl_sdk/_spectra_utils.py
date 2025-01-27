@@ -6,7 +6,13 @@ from typing import Optional, Protocol, Union
 
 import numpy as np
 
-from dhl_sdk._utils import Instance, PredictionRequest
+from dhl_sdk._utils import (
+    Instance,
+    Metadata,
+    PipelineStage,
+    PredictionPipelineRequest,
+    SpectraPredictionConfig,
+)
 from dhl_sdk.exceptions import InvalidSpectraException
 
 # Type Aliases
@@ -23,7 +29,7 @@ class Dataset(Protocol):
     def variables(self) -> list:
         ...
 
-    def get_spectrum_index(self) -> int:
+    def get_spectra_index(self) -> int:
         ...
 
 
@@ -106,7 +112,7 @@ def _convert_to_request(
     # get number of vars in model from config
     variables = model.dataset.variables
     n_vars = len(variables)
-    spectrum_index = model.dataset.get_spectrum_index()
+    spectrum_index = model.dataset.get_spectra_index()
 
     request_data = []
     # handle pagination
@@ -123,7 +129,22 @@ def _convert_to_request(
                         )
                         break
 
-        json_data = PredictionRequest(instances=[instance]).model_dump(by_alias=True)
+        json_data = PredictionPipelineRequest(
+            instances=[instance],
+            metadata=Metadata(
+                variables=[{"id": var.id} for var in model.dataset.variables],
+            ),
+            stages=[PipelineStage(config=SpectraPredictionConfig(), id=model.id)],
+        ).model_dump(
+            by_alias=True,
+            exclude_none=True,
+            include={
+                "instances": True,
+                "metadata": True,
+                "stages": True,
+            },
+        )
+
         request_data.append(json_data)
 
     return request_data

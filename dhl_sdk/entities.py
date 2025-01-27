@@ -119,11 +119,18 @@ class SpectraDataset(Dataset):
         super().__init__(**data)
         self._client = data["client"]
 
-    def get_spectrum_index(self) -> int:
-        """Get the index of the spectrum variable"""
+    def get_spectra_index(self) -> int:
+        """Get the index of the spectra variable"""
         for index, variable in enumerate(self.variables):
             if variable.variant == "spectrum":
                 return index
+        raise ValueError("No spectrum variable found in dataset")
+
+    def get_spectra_code(self) -> str:
+        """Get variable code of spectra variable"""
+        for variable in self.variables:
+            if variable.variant == "spectrum":
+                return variable.code
         raise ValueError("No spectrum variable found in dataset")
 
     @staticmethod
@@ -163,12 +170,10 @@ class Model(BaseModel, ABC):
                 "The provided inputs failed the validation step"
             )
 
-        predict_url = f"{PREDICT_URL}/{self.id}/predict"
-
         predictions = []
         for prediction_data in json_data:
             try:
-                response = self._client.post(predict_url, prediction_data)
+                response = self._client.post(PREDICT_URL, prediction_data)
                 response.raise_for_status()
 
                 # in case of an error in the response (not HTTP)
@@ -295,7 +300,13 @@ class SpectraModel(Model):
             spectra=spectra, inputs=inputs, model=self
         )
 
-        return super().get_predictions(spectra_processing_strategy)
+        predictions = super().get_predictions(spectra_processing_strategy)
+
+        spectra_code = self.dataset.get_spectra_code()
+        if spectra_code in predictions:
+            predictions.pop(spectra_code)
+
+        return predictions
 
     @property
     def inputs(self) -> list[str]:
@@ -316,7 +327,7 @@ class SpectraModel(Model):
 
     def _get_spectra_size(self) -> int:
         """Get the size of the spectra from variable information in the API"""
-        spectrum = self.dataset.variables[self.dataset.get_spectrum_index()]
+        spectrum = self.dataset.variables[self.dataset.get_spectra_index()]
         return spectrum.size
 
     @staticmethod
